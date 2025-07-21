@@ -5,7 +5,7 @@ message(STATUS "Initiating compile using CMake ${CMAKE_VERSION}")
 
 set(VERSION_MAJOR "18")
 set(VERSION_MINOR "4")
-set(VERSION_REVISION "0")
+set(VERSION_REVISION "1")
 set(VERSION "0.${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_REVISION}")
 
 option(STATIC "Link libraries statically, requires static Qt")
@@ -20,7 +20,7 @@ if(DEV_MODE)
   # DEV_MODE checks out the monero submodule to master, which requires C++17.
   set(CMAKE_CXX_STANDARD 17)
 else()
-  set(CMAKE_CXX_STANDARD 11)
+  set(CMAKE_CXX_STANDARD 14)
 endif()
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
