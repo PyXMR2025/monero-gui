@@ -1,0 +1,106 @@
+===============================================================
+ monero-gui SHA-256 HTTP Digest Auth - build/run evidence
+ Date (UTC): 2026-09-19 18:11:59
+===============================================================
+
+[submodule] git describe:
+31f7d625df436099dad348952f73b3ca0c98134c
+
+[submodule] working-tree patch applied for PR #11345:
+
+
+[submodule] digest algorithm tuple in the compiled source:
+Z:\workspace\monero-gui\monero\contrib\epee\src\http_auth.cpp:166:  struct md5_ : digest_base_<EVP_md5, 16>
+Z:\workspace\monero-gui\monero\contrib\epee\src\http_auth.cpp:173:  struct sha256_ : digest_base_<EVP_sha256, 32>
+Z:\workspace\monero-gui\monero\contrib\epee\src\http_auth.cpp:180:  constexpr const std::tuple<sha256_, md5_> digest_algorithms{};
+
+[hash] SHA256 of the compiled auth sources:
+  0d67c9931ff94f47efe4da63d2f422d7c81750b6a7e171cecd0a09fb6305f980  http_auth.cpp
+  dd0df8aade3d350b04146baaf4e6cdd87b0125193fd8ba15cded98296acddc00  http_auth.h
+
+[toolchain] 用于 x64 的 Microsoft (R) C/C++ 优化编译器 19.44.35228 版
+[openssl]   # define OPENSSL_VERSION_TEXT "OpenSSL 3.0.15 3 Sep 2024"
+[boost]     BOOST_VERSION = #define BOOST_VERSION 108200
+
+[compat] diff between shipped http_auth.cpp and the MSVC/Boost1.82 compile copy:
+-        const boost::iterator_range<const char*> data(boost::as_literal(arg));
++        const auto data = boost::as_literal(arg);
+-          reinterpret_cast<const std::uint8_t*>(data.begin()),
++          reinterpret_cast<const std::uint8_t*>(&*data.begin()),
++
+
+[compile] http_auth_testcopy.cpp
+
+[compile] wipeable_string.cpp
+
+[compile] hex.cpp
+
+[compile] elpp_init.cpp
+
+[compile] easylogging++.cc
+
+[compile] test_main.cpp
+
+[link] auth_test.exe
+  OK
+
+[run] auth_test.exe
+
+monero-gui SHA-256 HTTP Digest Auth evidence (RFC 7616 / PR #11345)
+
+=== 1. SERVER (monerod -> GUI): WWW-Authenticate challenges ===
+    [ok] response.is_initialized()
+    [ok] response->m_response_code == 401
+    [ok] response->m_additional_fields.size() == 4
+  WWW-Authenticate: Digest qop="auth",algorithm=SHA-256,realm="monero-rpc",nonce="wGD7ItjJtlsBzvr+BsPGyA==",stale=false
+    [ok] iequals(f.at("algorithm"), expected[i])
+    [ok] f.at("qop") == "auth"
+    [ok] f.at("realm") == "monero-rpc"
+    [ok] f.at("stale") == "false"
+  WWW-Authenticate: Digest qop="auth",algorithm=SHA-256-sess,realm="monero-rpc",nonce="wGD7ItjJtlsBzvr+BsPGyA==",stale=false
+    [ok] iequals(f.at("algorithm"), expected[i])
+    [ok] f.at("qop") == "auth"
+    [ok] f.at("realm") == "monero-rpc"
+    [ok] f.at("stale") == "false"
+  WWW-Authenticate: Digest qop="auth",algorithm=MD5,realm="monero-rpc",nonce="wGD7ItjJtlsBzvr+BsPGyA==",stale=false
+    [ok] iequals(f.at("algorithm"), expected[i])
+    [ok] f.at("qop") == "auth"
+    [ok] f.at("realm") == "monero-rpc"
+    [ok] f.at("stale") == "false"
+  WWW-Authenticate: Digest qop="auth",algorithm=MD5-sess,realm="monero-rpc",nonce="wGD7ItjJtlsBzvr+BsPGyA==",stale=false
+    [ok] iequals(f.at("algorithm"), expected[i])
+    [ok] f.at("qop") == "auth"
+    [ok] f.at("realm") == "monero-rpc"
+    [ok] f.at("stale") == "false"
+
+=== 2. CLIENT (GUI -> node): chooses SHA-256, real Authorization header ===
+    [ok] client.handle_401(response) == http::http_client_auth::kSuccess
+    [ok] field.is_initialized()
+  Authorization: Digest algorithm=SHA-256,nonce="7ypf/xlj9XXwfDPEoM4URrv/xwf94BcCAzFZH4GiTo0v",realm="http-auth@example.org",response="fc4ab52d5e27371b5e228676febd9d0c452c10a7ba21bb5f22372ae11f72ad29",uri="/dir/index.html",username="Mufasa",opaque="FQhe/qaU925kfnzjCev0ciny7QMkPqMAFRtzCUYo5tdS",qop=auth,nc=00000001,cnonce="HU7gssUaPftu3HBX9Sgg6Q=="
+    [ok] iequals(f.at("algorithm"), "SHA-256")
+    [ok] f.at("qop") == "auth"
+    [ok] f.at("nc") == "00000001"
+    [ok] f.at("response").size() == 64
+    [ok] iequals(f.at("response"), expected)
+  RFC 7616 3.9.1 vector: 753927fa0e85d155564e2e272a28d1802ca10daf4496794697cf8db5856cb6c1
+    [ok] rfc == "753927fa0e85d155564e2e272a28d1802ca10daf4496794697cf8db5856cb6c1"
+
+=== 3. END-TO-END: SHA-256 accepted, replay rejected (stale=true) ===
+    [ok] client.handle_401(*challenge) == http::http_client_auth::kSuccess
+  Authorization: Digest algorithm=SHA-256,nonce="8e8qVKO51cqzeTcfTJpfnw==",realm="monero-rpc",response="6287b5f3b930e93e15961630a2cf3a6d0bc2da73e3bb74da2730d7bb026194ac",uri="/FOO",username="foo",qop=auth,nc=00000001,cnonce="ju3Okf5BVvZPzxcGskw57A=="
+  -> first request: AUTHENTICATED (no 401)
+    [ok] replay.is_initialized()
+  replay response : stale=true (new nonce issued)
+    [ok] f.at("stale") == "true"
+
+=== 4. BACKWARDS COMPAT: MD5-only challenge still accepted ===
+    [ok] client.handle_401(md5_challenge) == http::http_client_auth::kSuccess
+  Authorization: Digest algorithm=MD5,nonce="2OWghLlFyx4CdlIMpjzUcg==",realm="monero-rpc",response="d28c191384482771bb5b94c2284cc6c9",uri="/legacy",username="foo",qop=auth,nc=00000001,cnonce="IxLqkeybmf/kcaxjFrDW+A=="
+    [ok] iequals(parse_auth(auth_field->second).at("algorithm"), "MD5")
+    [ok] !server.get_response(request).is_initialized()
+
+================ SUMMARY ================
+34 passed, 0 failed
+
+Log saved to: z:\workspace\monero-gui\build-auth-test\sha256-evidence.log
+RESULT: SUCCESS

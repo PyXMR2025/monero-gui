@@ -1,0 +1,5 @@
+#define WIN32_LEAN_AND_MEAN
+#define NOMINMAX 1
+#define ELPP_NO_DEFAULT_LOG_FILE 1
+#include "easylogging++.h"
+INITIALIZE_EASYLOGGINGPP
